@@ -1,7 +1,7 @@
 # AGENTS — Mémoire M1 | Risque de crédit
 
 ## Contexte académique
-Mémoire de Master 1 en finance.
+Mémoire de Master 1 en DATA SCIENCE & IA.
 Thème : Risque de crédit, avec un focus sur le défaut de crédit (variable binaire).
 
 La base de données contient une variable cible indiquant
