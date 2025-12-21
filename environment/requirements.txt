@@ -1,0 +1,17 @@
+numpy
+pandas
+scipy
+statsmodels
+scikit-learn
+matplotlib
+seaborn
+jupyter
+openpyxl
+xgboost
+lightgbm
+shap
+tqdm
+scikit-plot
+imbalanced-learn
+pyarrow
+joblib
