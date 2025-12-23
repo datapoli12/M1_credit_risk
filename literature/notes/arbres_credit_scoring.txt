@@ -1,0 +1,465 @@
+
+
+##########################################################################################################
+#########################              Arbres de décision exemples cours           #######################
+##########################################################################################################
+# Nous allons utiliser plusieurs bases de données pour illustrer les concepts vus dans le cours 
+#####  Base 1: German-credit ##### 
+# Source de la base de données : "http://archive.ics.uci.edu/ml/machine-learning-databases/statlog/german/german.data"
+# ou bien une version plus simplifiée :"https://www.kaggle.com/uciml/german-credit" 
+#                             
+# Variables 
+
+#Attribute 1:  (qualitative)
+#	       Status of existing checking account
+#               A11 :      ... <    0 DM
+#	       A12 : 0 <= ... <  200 DM
+#	       A13 :      ... >= 200 DM /
+#		     salary assignments for at least 1 year
+#               A14 : no checking account
+
+#Attribute 2:  (numerical) Duration in month
+
+#Attribute 3:  (qualitative)
+#          Credit history
+#	      A30 : no credits taken/
+#		    all credits paid back duly
+#         A31 : all credits at this bank paid back duly
+##	      A32 : existing credits paid back duly till now
+#         A33 : delay in paying off in the past
+#	      A34 : critical account/
+#		 other credits existing (not at this bank)
+
+#Attribute 4:  (qualitative)
+#	      Purpose
+#	      A40 : car (new)
+#	      A41 : car (used)
+#	      A42 : furniture/equipment
+#	      A43 : radio/television
+#	      A44 : domestic appliances
+#	      A45 : repairs
+#	      A46 : education
+#	      A47 : (vacation - does not exist?)
+#	      A48 : retraining
+#	      A49 : business
+#	      A410 : others
+
+#Attribute 5:  (numerical) Credit amount
+
+#Attibute 6:  (qualitative)
+#	      Savings account/bonds
+#	      A61 :          ... <  100 DM
+#	      A62 :   100 <= ... <  500 DM
+#	      A63 :   500 <= ... < 1000 DM
+#	      A64 :          .. >= 1000 DM
+#        A65 :   unknown/ no savings account
+
+#Attribute 7:  (qualitative)
+#	      Present employment since
+#	      A71 : unemployed
+#	      A72 :       ... < 1 year
+#	      A73 : 1  <= ... < 4 years  
+#	      A74 : 4  <= ... < 7 years
+#	      A75 :       .. >= 7 years
+
+#Attribute 8:  (numerical) Installment rate in percentage of disposable income
+
+#Attribute 9:  (qualitative) Personal status and sex
+#	      A91 : male   : divorced/separated
+#	      A92 : female : divorced/separated/married
+#         A93 : male   : single
+#	      A94 : male   : married/widowed
+#	      A95 : female : single
+
+#Attribute 10: (qualitative) Other debtors / guarantors
+#	      A101 : none
+#	      A102 : co-applicant
+#	      A103 : guarantor
+
+#Attribute 11: (numerical)Present residence since
+
+#Attribute 12: (qualitative)    Property
+#	      A121 : real estate
+#	      A122 : if not A121 : building society savings agreement/life insurance
+#          A123 : if not A121/A122 : car or other, not in attribute 6
+#	      A124 : unknown / no property
+
+#Attribute 13: (numerical) Age in years
+
+#Attribute 14: (qualitative) Other installment plans 
+#	      A141 : bank
+#	      A142 : stores
+#	      A143 : none
+
+#Attribute 15: (qualitative) Housing
+#	      A151 : rent
+#	      A152 : own
+#	      A153 : for free
+
+# Attribute 16: (numerical) Number of existing credits at this bank
+
+# Attribute 17: (qualitative) Job
+#	      A171 : unemployed/ unskilled  - non-resident
+#	      A172 : unskilled - resident
+#	      A173 : skilled employee / official
+#	      A174 : management/ self-employed/highly qualified employee/ officer
+
+#Attribute 18: (numerical) Number of people being liable to provide maintenance for
+
+# Attribute 19: (qualitative) Telephone
+#	      A191 : none
+#	      A192 : yes, registered under the customers name
+
+# Attribute 20: (qualitative) foreign worker
+#	      A201 : yes
+#	      A202 : no
+
+
+# Nettoyage mémoire 
+rm(list=ls())
+
+##Paths 
+
+path_in = "/Users/201131/Desktop/Scoring Maserati/4- Arbres de décision/TP/Input/"
+path_out ="C/Users/201131/Desktop/Scoring Maserati/4- Arbres de décision/TP/Output/" 
+
+# Packages
+require(tidyverse) #for easy data manipulation and visualization
+require(caret)  #for easy machine learning workflow
+require(MASS)   #for Modern Applied Statistic
+require(tree)   #for regression and classification trees
+require(dplyr)    # alternatively, this also loads %>%
+
+
+
+# noms des variables
+myVariableNames<-c("Comptes","Duree_credit","Historique_credit","Objet_credit",
+                   "Montant_credit","Epargne","Anciennete_emploi","Taux_effort",
+                   "Situation_familiale","Garanties","Anciennete_domicile","Biens","Age",
+                   "Autres_credits","Statut_domicile","Nb_credits","Type_emploi",
+                   "Nb_pers_charge","Telephone","Etranger","Cible")
+
+# nom des variables en anglais
+myVariableNamesE<-c("checking_status","duration","credit_history",
+                    "purpose","credit_amount","savings","employment","installment_rate",
+                    "personal_status","other_parties","residence_since","property_magnitude",
+                    "age","other_payment_plans","housing","existing_credits","job",
+                    "num_dependents","telephone","foreign_worker","class")
+
+# lecture du fichier texte sur Internet
+credit = read.table("http://archive.ics.uci.edu/ml/machine-learning-databases/statlog/german/german.data",h=FALSE,col.names=myVariableNames)
+
+# Optionnel : Enregistrement de la base credit dans mon Output! 
+write.csv2(credit,file='C:/Users/Zineb ABIDI/Desktop/MBFA-06032020/Arbres de décision/TP/Output/credit.csv', row.names=FALSE)
+write.csv2(credit,paste(path_out, 'credit.csv'),row.names=FALSE)
+
+### Lecture des données####
+# Pour avoir plus de détails concernant les noms et explication de chaque colonne/variable, vous pouvez consulter le fichier "German.doc"
+credit$Cible[credit$Cible == 1] <- 0 # crédits OK
+credit$Cible[credit$Cible == 2] <- 1 # crédits KO
+#credit$Cible <- credit$Cible - 1
+credit$Cible <- factor(credit$Cible)
+
+
+
+# ajout d'un identifiant (le no de ligne)
+credit$Cle <- seq(1,nrow(credit))
+
+# recodage de certaines variables
+credit$Comptes <- as.factor(substr(credit$Comptes,3,3))
+credit$Anciennete_emploi <- substr(credit$Anciennete_emploi,3,3)
+credit$Epargne <- substr(credit$Epargne,3,3)
+credit$Epargne[credit$Epargne == "5" ] <- "0"
+credit$Etranger <- NULL
+
+# transformation de l'ensemble des variables qualitatives en factors
+varquali <- c("Comptes", "Epargne", "Historique_credit", "Objet_credit",
+              "Situation_familiale", "Garanties", "Biens", "Autres_credits",
+              "Statut_domicile", "Type_emploi", "Anciennete_emploi", "Telephone", "Nb_pers_charge")
+indices <- names(credit) %in% varquali
+for (i in (1:ncol(credit))) { if (indices[i] == 1) { credit[,i] <- factor(credit[,i]) } }
+
+# liste des variables quantitatives
+varquanti <- c("Duree_credit", "Montant_credit", "Taux_effort",
+               "Anciennete_domicile", "Age", "Nb_credits")
+
+# exclusion de la clé de la liste des variables analysées
+names(credit)
+vars <- -grep('Cle', names(credit))
+id= as.factor(seq(1,nrow(credit)))
+
+
+####Création d'un échantillon test et train ####
+#require(dplyr)
+#require(MASS)
+#require(tidyverse)
+require(caret)
+training.samples <- credit$Cle %>% createDataPartition(p = 0.8, list = FALSE)
+credit2 <- credit[training.samples, ]
+test<- credit[-training.samples, ]
+
+creditdataall=credit 
+#credit=credit2 
+
+# -------------------------------------------------
+# I- Arbres de décision
+# -------------------------------------------------
+#Le code source de CART (Jerome Friedman) est détenu par la société Salford Systems et n'est pas public! 
+# Les packages tree et rpart (Reursive PARTitioning) sont inspiré de CART! rpart est plus rapide et le plus utilisé et est à la base des packages de boosting 'ada' par exemple 
+library(tree)
+arbre <- tree(Cible ~ Age+Duree_credit,data=credit2)
+plot(arbre)
+text(arbre)# Remarque : Les chiffre en bas de chaque feuille terminale peut être interprésté en (1- valeur)=taux d'impayé de la catégorie 
+
+
+# arbre de décision CART*****
+# install.packages("rpart.plot")
+library(rpart) # (Reursive PARTitioning) 
+library(rpart.plot)
+
+# Petit Rappel
+# Impureté : Fonction positive, concave et symétrique qui est minimale lorsque tous les indiv qui composent le noeud appartiennent à la même classe et maximale lorsque tous les indiv sont présentes dans la meme proportion dans le noeud. 
+# Note : La concavité assure la diminution systématique de l'impurté quand on scinde un noeud père en plusieurs noeuds-fils. 
+# Autrement dit: la différence suivante est toujours positive ou nulle
+#                         impureté (noeud père - sigma (ni/n)*Gini (ième noeud fils) (voir les slides du cours)
+# Plusieurs fonctions d'impureté: Indice de Gini, l'Entropie... 
+# 1-Indice de Gini : L'indice de Gini mesure la probabilité qe deux individus tirés par hasard (avec remise) dans un noeud, appartiennent à deux classes différentes 
+#                    Gini(noeud)=1-sigma(fi^2)=sigma(fi*fj)pour tout i différent de j (i ={1...k})
+#                    fi sont les fréquences empiriques dans le noeud des k classes de la variable à expliquer (on peut l approximer par P(Ci/noeud) d etre dans la classe Ci si on est dans le noeud
+#				     Cela suppose que les proba à priori sont égales 
+#				     Indice de Gini élevé ==> classes uniforément distribuées dans un noeud 
+#					 Indice de Gini élevé ==> plus le noeud est pur 
+#					 Pour deux classes l'Indice de Gini varie de 0 à 1/2  
+#					 Pour 3 classes l'Indice de Gini varie de  0 à 2/3. Pour k classes, l'Indice de Gini varie de  0 à 1/k.
+
+# 2 -L entropie : est définie par Entropie (noeud)=-sigma(fi*log(fi)). Minimiser l'entropie)==> maximiser la pureté 
+#
+
+
+
+set.seed(235) # Pour générer une séquence de nombres aléatoires :D 
+cart1 = rpart(Cible ~ . ,data = credit2[id,vars],method="class",parms=list(split="gini"),cp=0)  
+# minsplit = 20 par défaut-l'effectif min d'un noued pour être scindé
+# minbucket = 1/3*minsplit par défaut-l'effectif min d une feuille (noeud terminal) pour être scindé (minbucket) 																							
+# methode = class ou anova pour arbre de régression
+# cp=paramètre de la compléxité (par défaut = 0,01) (arbre profond ou pas)
+# La profondeur pourra être spécifié avec le paramètre maxdepth
+#De même pour l'effectif min d'un noued pour être scindé (minisplit) et l'effectif min d une feuille (noeud terminal) pour être scindé (minbucket) 
+
+cart2 = rpart(Cible ~ . ,data = credit2[id,vars],method="class",parms=list(split="information"),cp=0) # split="information"==> Pour l'entropie
+
+cart3 = rpart(Cible ~ . ,data = credit2[id,vars],method="class",parms=list(split="gini"),cp=0.05)
+cart4 = rpart(Cible ~ . ,data = credit2[id,vars],method="class",parms=list(split="gini"),control=list(minbucket=30,minsplit=30*2,maxdepth=3))
+
+cart4 # commande équivalente à "print(cart4)"
+rpart.plot(cart1)
+rpart.plot(cart2)
+
+rpart.plot(cart3)
+rpart.plot(cart4)
+x1=40+46+348+366
+#  Intérprétation: 2) Comptes=3,4 457  60 0 (0.8687090 0.1312910) *
+# Le numéro de noeud est 2)
+# La régle de scissio dplit est : Comptes=3,4
+#  * indique que le noeud est terminal 
+#  Les proba d'appartenir à chaque classe (2 dans notre exemple) sont ((0.8687090 0.1312910)) 
+#  457: nombre d'indiv dans le noeuds 
+#  La valeur prédite yval, qui est la classe majoritaire est : 0 
+#  Le nombre loss d'indiv ie ne correspondant pas à la classe majoritaire est de 60
+
+
+
+summary(cart4,digits=3) # plus d'informations sur les scissions / digits=3 ==> Afficher 3 chiffres après la virgules 
+# Le résultat de summary(cart4,digits=3) ne brille pas par sa lisibilité ==>
+
+# affichage graphique de l'arbre
+plot(cart4,branch=.2, uniform=T, compress=T, margin=.1)
+text(cart4, fancy=T,use.n=T,pretty=0,all=T, cex=0.6)   # use.n=T pour afficher le nbr d'indiv dans chaque noeud 
+# fancy=T ==> représenter les noeuds terminaux par des réctangles et les autres par des éllipses
+# pretty=0 :==> Ne pas abréger les noms des modalités divisantes 
+# affichage graphique un peu amélioré de l'arbre
+
+# affichage amélioré avec package rpart.plot
+rpart.plot(cart4) 
+# Ou bien 
+prp(cart4,type=2,extra=1,split.box.col="lightblue")
+
+#### Compléxité et élagage d'un arbre###
+#La fonction princp permet d afficher l erreur "xerror" calculée par VC. L erreur réelle par resubstitution ainsi que le nombre nsplit de scissions
+# Reprenons cette arbre 
+cart = rpart(Cible ~ . ,data = credit2[id,vars],method="class",parms=list(split="gini"),cp=0)
+printcp(cart)
+# Interpretation : Root node error: 232/800 = 0.29 : Les taux d'erreur affichés sont relatifs car ils ont été mis à l'chelle afin de valoir 1 pour l'arbre réduit à la racine (voir première ligne du tableau) 
+#  En réalité, cet arbre commet un erreur de  232/800 = 0.29
+# 7  0.00833333     13   0.65667 0.88000 0.046464. taux d'erreur = 0.0071839*232/800. Taux d'erreur absolu =0.61207*232/800
+
+
+##### Elagage####
+# élaguage
+prunedcart = prune(cart,cp=0.0129534)
+prunedcart4f = prune(cart,cp=0.0328152) #4 feuilles 
+prunedcart7f = prune(cart,cp=0.0310881)
+prunedcart9f = prune(cart,cp=0.0155441) #9 feuilles 
+prunedcart15f = prune(cart,cp=0.0103627)
+# choix valeur coefficient de pénalisation de la complexité pour élagage
+plot(prunedcart4f,branch=.2, uniform=T, compress=T, margin=.1)
+text(prunedcart4f, fancy=T,use.n=T,pretty=0,all=T,cex=.5)
+
+
+# affichage avec package rpart.plot
+prp(prunedcart4f,type=2,extra=1,split.box.col="lightgray")
+prp(prunedcart9f,type=2,extra=1,split.box.col="lightgray")
+
+# élagage au nombre minimum de feuilles (Technique de Breiman et al. 1984) : min d erreur et min sd 
+mincart <- prune(cart,cp=cart$cptable[min(2,nrow(cart$cptable)), "CP"])
+plot(mincart,branch=.2, uniform=T, compress=T, margin=.1)
+text(mincart, fancy=T,use.n=T,pretty=0,all=T,cex=.5)
+prp(mincart,type=2,extra=1,split.box.col="lightblue")
+
+# Amélioration de la représentation graphique 
+#require(rattle)
+#fancyRpartPlot(mincart, sub="", palettes=c("Greys"))
+#prp(mincart,type=2,extra=1,split.box.col="lightgray") #ou avec le package rpart.plot
+
+
+# mesure des performances sur l'échantillon de test
+test$CART <- predict(cart,type="prob",test)
+test$CART <- predict(prunedcart,type="prob",test)
+test$CART4f <- predict(prunedcart4f,type="prob",test)
+test$CART7f <- predict(prunedcart7f,type="prob",test)
+test$CART9f <- predict(prunedcart9f,type="prob",test)
+test$mincart <- predict(mincart,type="prob",test)
+head(test["CART4f"],5)
+
+
+# aire sous la courbe ROC
+library(ROCR)
+pred <- prediction(test$mincart[,2],test$Cible,label.ordering=c(0,1))
+auc <- performance(pred,"auc")
+performance(pred,"auc")@y.values[[1]]
+auc
+# équivalent : attr(performance(pred,"auc"),'y.values')[[1]]
+# récupère l'attribut "y.values" de l'objet "performance"
+perf <- performance(pred,"tpr","fpr") # fpr : 'False positive rate' vs. tpr: 'True positive rate'
+plot(perf,main='Courbe ROC')
+segments(0,0,1,1,col='blue',lty=5) # ajout diagonale en pointillés gris
+
+# courbe de lift usuelle
+pred <- prediction(ytpred,yt,label.ordering=c(0,1))
+#lift <- performance(pred,"tpr","rpp")
+#plot(lift,main='Courbe de lift')
+#segments(0,0,1,1,col='blue',lty=5) # ajout diagonale en pointillés gris
+
+# comparaison de courbes ROC
+pred7f <- prediction(test$CART7f[,2],test$Cible,label.ordering=c(0,1))
+pred9f <- prediction(test$CART9f[,2],test$Cible,label.ordering=c(0,1))
+plot(performance(pred9f,"tpr","fpr"),col='red',lty=2,main='AUC de modèles CART')
+plot(performance(pred7f,"tpr","fpr"), col='blue',add=TRUE,lty=1)
+segments(0,0,1,1,lty=3)
+#legend(0.6,0.6,c('7 feuilles','9 feuilles'),col=c('red','black'),lwd=3)
+legend("bottomright",c('9 feuilles','7 feuilles'),col=c('red','blue'),
+       lty=c(2,1),lwd=3)
+
+
+# ---------------------------------------------------------------------------------------------------------
+# Arbre C5.0
+# ---------------------------------------------------------------------------------------------------------
+
+# arbre de décision C5.0
+install.packages("C50")
+library(C50)
+
+creditC5=credit2[,1:16]
+Cible=as.factor(credit2[,17])
+
+c50 <- C5.0(Cible ~ . ,data = credit2[id,vars],rules=T)
+summary(c50)
+C50 <- predict(c50,type="prob",test)
+head(C50[,2])
+pred <- prediction(C50[,2],test$Cible,label.ordering=c(0,1))
+(auc <- performance(pred,"auc")@y.values[[1]]) # 0.7841022
+
+# ---------------------------------------------------------------------------------------------------------
+# 
+# Forêts aléatoires
+# ---------------------------------------------------------------------------------------------------------
+
+library(randomForest)
+#credit$Cible <- factor(credit$Cible)
+
+# remarque : la variable à expliquer doit avoir le type "factor" pour un classement
+# ntree = 500 arbres agrégés
+# mtry = 4 variables sélectionnées pour la scission de chaque noeud
+# importance = TRUE calcule l'importance des variables
+# replace = TRUE (valeur par défaut) pour tirage avec remise des individus
+# keep.forest = TRUE pour conserver la forêt dans l'objet en sortie et pouvoir
+#                    l'appliquer à un autre échantillon
+# nodesize = effectif minimum de chaque feuille (par défaut : 1 en classement
+#                    et 5 en régression)
+
+set.seed(235)
+rf <- randomForest(Cible ~ ., data=credit[id,vars], importance=TRUE,proximity=TRUE,ntree=500, mtry=4, replace=T, keep.forest=T,nodesize=5,ytest=test[,"Cible"],xtest=test[,1:19])
+rf
+set.seed(235)
+ptm <- proc.time()
+rf <- randomForest(Cible ~ ., data=credit[id,vars], importance=TRUE,proximity=TRUE, ntree=500000, mtry=3, replace=T, keep.forest=T,nodesize=5,ytest=test[,"Cible"],xtest=test[,1:19],cutoff=c(0.5,0.5))
+(proc.time() - ptm)/60
+rf
+head(rf)
+
+# erreur
+
+mean(rf$oob.times) # nb de fois où chaque individu est out of bag
+head(rf$oob.times)
+head(rf$err.rate)
+head(rf$test$err.rate)
+tail(rf$err.rate)
+tail(rf$test$err.rate)
+
+# taux d'erreur en test
+testrf <- predict(rf,test,type='response')
+head(testrf)
+head(test$Cible)
+table(test$Cible,testrf)
+err_test=sum(testrf != test$Cible) / nrow(test) # 0.02
+
+# taux d'erreur en apprentissage
+trainrf <- predict(rf,credit[id,],type='response')
+table(credit[id,"Cible"],trainrf)
+err_train <- sum(trainrf != credit[id,"Cible"]) / nrow(credit[id,])
+# taux d'erreur en apprentissage OOB
+#rfOOB <- ifelse(rf$votes[,2]>=0.5,1,0)
+#table(credit[id,"Cible"],rfOOB)
+err_OOB <- sum(rf$pred != credit[id,"Cible"]) / nrow(credit[id,])
+
+
+
+# ---------------------------------------------------------------------------------------------------------
+# Réseaux de neurones
+# ---------------------------------------------------------------------------------------------------------
+
+# On charge le package nnet pour les réseaux de neurones (perceptron à une couche cachée)
+library(nnet)
+# paramètres importants :
+# size : nb noeuds dans couche cachée
+# decay pénalise la norme du vecteurs des paramètres et contraint ainsi la flexibilité du modèle
+
+library(pROC)
+library(ROCR)
+
+
+# réseau avec sortie sigmoïde
+
+library(e1071)
+
+x2=length(seq(0.001,1,by=0.01))
+ptm <- proc.time()
+calibration <- tune.svm(Cible~.,data=credit2,gamma=seq(0.001,1,by=0.01))
+model.svm <- svm(Cible~.,data=credit2,gamma=calibration$best.parameters)
+time_svm=(proc.time() - ptm)
+# Prédiction
+
+pred.svm <- predict(model.svm,data=test)
+mean(test$Cible!=pred.svm)
+
+
